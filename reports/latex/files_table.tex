@@ -1,0 +1,29 @@
+% File: reports/latex/files_table.tex
+% Add to your paper preamble if not already present:
+% \usepackage{booktabs,tabularx,hyperref,listings}
+% \lstset{basicstyle=\ttfamily\footnotesize,breaklines=true}
+
+\begin{table}[t]
+\centering
+\caption{Key repository files referenced in this manuscript (trimmed excerpts and permalinks).}
+\label{tab:repo_files}
+\begin{tabularx}{\linewidth}{@{}l X c@{}}
+\toprule
+File path & Purpose / Short excerpt & Link \\
+\midrule
+\texttt{reports/latex/paper\_manuscript.tex} &
+Main manuscript (includes inputs, figures, and references). & 
+\href{https://github.com/mayankgotmare15/StockMarketIntelligence/blob/d165c9ef6614c6bb15de103b01dcce4cd49b24c9/reports/latex/paper_manuscript.tex}{paper\_manuscript.tex} \\
+\addlinespace[2pt]
+\texttt{reports/latex/table3\_sector\_breakdown.tex} &
+Sector-specific performance table used by manuscript. Trimmed excerpt: \newline
+\begin{minipage}[t]{0.62\linewidth}\footnotesize\ttfamily
+Automobile & 5 & 0.012947 & 0.011714 & +9.52\% \\
+Banking & 6 & 0.011219 & 0.010214 & +8.95\% \\
+FMCG & 6 & 0.010112 & 0.009279 & +8.24\% \\
+\end{minipage}
+&
+\href{https://github.com/mayankgotmare15/StockMarketIntelligence/blob/d165c9ef6614c6bb15de103b01dcce4cd49b24c9/reports/latex/table3_sector_breakdown.tex}{table3\_sector\_breakdown.tex} \\
+\bottomrule
+\end{tabularx}
+\end{table}
