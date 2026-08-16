@@ -1,0 +1,15 @@
+% Table 2: Volatility Regime Performance Breakdown
+\begin{table}[t]
+\centering
+\caption{Predictive Error (MAE) Stratified by Volatility Terciles (Low, Medium, High ATR-20). Demonstrates adaptive robustness under regime shifts.}
+\label{tab:regime_ablation}
+\begin{tabular}{lcccc}
+\hline
+\textbf{Market Regime} & \textbf{Sample Count} & \textbf{Static MAE} & \textbf{Adaptive MAE} & \textbf{Error Reduction (\%)} \\
+\hline
+High Volatility & 12796 & 0.012471 & 0.011363 & +8.88\% \\
+Low Volatility & 5785 & 0.010282 & 0.009347 & +9.09\% \\
+Medium Volatility & 3805 & 0.011105 & 0.009960 & +10.31\% \\
+\hline
+\end{tabular}
+\end{table}

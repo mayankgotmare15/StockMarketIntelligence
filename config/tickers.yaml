@@ -1,0 +1,89 @@
+# ==============================================================================
+# NSE Equities Universe for Real-Time Indian Stock Market Intelligence (v4)
+# 30 Large-Cap / Highly Liquid NSE Tickers Across 5 Sectors (6 stocks per sector)
+# ==============================================================================
+
+version: "4.0"
+universe_name: "NSE-30-MultiSector"
+min_history_days: 400
+
+sectors:
+  Banking:
+    description: "Financial Services & Banking"
+    stocks:
+      - symbol: "HDFCBANK.NS"
+        name: "HDFC Bank Limited"
+      - symbol: "ICICIBANK.NS"
+        name: "ICICI Bank Limited"
+      - symbol: "SBIN.NS"
+        name: "State Bank of India"
+      - symbol: "KOTAKBANK.NS"
+        name: "Kotak Mahindra Bank Limited"
+      - symbol: "AXISBANK.NS"
+        name: "Axis Bank Limited"
+      - symbol: "INDUSINDBK.NS"
+        name: "IndusInd Bank Limited"
+
+  IT:
+    description: "Information Technology & Software"
+    stocks:
+      - symbol: "TCS.NS"
+        name: "Tata Consultancy Services Limited"
+      - symbol: "INFY.NS"
+        name: "Infosys Limited"
+      - symbol: "HCLTECH.NS"
+        name: "HCL Technologies Limited"
+      - symbol: "WIPRO.NS"
+        name: "Wipro Limited"
+      - symbol: "TECHM.NS"
+        name: "Tech Mahindra Limited"
+      - symbol: "PERSISTENT.NS"
+        name: "Persistent Systems Limited"
+
+  FMCG:
+    description: "Fast Moving Consumer Goods"
+    stocks:
+      - symbol: "HINDUNILVR.NS"
+        name: "Hindustan Unilever Limited"
+      - symbol: "ITC.NS"
+        name: "ITC Limited"
+      - symbol: "NESTLEIND.NS"
+        name: "Nestle India Limited"
+      - symbol: "BRITANNIA.NS"
+        name: "Britannia Industries Limited"
+      - symbol: "TATACONSUM.NS"
+        name: "Tata Consumer Products Limited"
+      - symbol: "DABUR.NS"
+        name: "Dabur India Limited"
+
+  Automobile:
+    description: "Automobile & Auto Ancillaries"
+    stocks:
+      - symbol: "MARUTI.NS"
+        name: "Maruti Suzuki India Limited"
+      - symbol: "M&M.NS"
+        name: "Mahindra & Mahindra Limited"
+      - symbol: "BAJAJ-AUTO.NS"
+        name: "Bajaj Auto Limited"
+      - symbol: "EICHERMOT.NS"
+        name: "Eicher Motors Limited"
+      - symbol: "HEROMOTOCO.NS"
+        name: "Hero MotoCorp Limited"
+      - symbol: "TVSMOTOR.NS"
+        name: "TVS Motor Company Limited"
+
+  Pharma:
+    description: "Pharmaceuticals & Healthcare"
+    stocks:
+      - symbol: "SUNPHARMA.NS"
+        name: "Sun Pharmaceutical Industries Limited"
+      - symbol: "DRREDDY.NS"
+        name: "Dr. Reddy's Laboratories Limited"
+      - symbol: "CIPLA.NS"
+        name: "Cipla Limited"
+      - symbol: "DIVISLAB.NS"
+        name: "Divi's Laboratories Limited"
+      - symbol: "APOLLOHOSP.NS"
+        name: "Apollo Hospitals Enterprise Limited"
+      - symbol: "LUPIN.NS"
+        name: "Lupin Limited"

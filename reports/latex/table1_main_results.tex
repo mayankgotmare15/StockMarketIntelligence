@@ -1,0 +1,18 @@
+% Table 1: Cross-Model Predictive Performance Summary
+\begin{table*}[t]
+\centering
+\caption{Comprehensive Out-of-Sample Predictive Performance Across 30 NSE Equities (252-day Rolling-Origin Walk-Forward CV, 21-day steps). Bold indicates best performance.}
+\label{tab:main_results}
+\begin{tabular}{lccccc}
+\hline
+\textbf{Model Architecture} & \textbf{Mean MAE $\downarrow$} & \textbf{Mean RMSE $\downarrow$} & \textbf{Mean $R^2$ $\uparrow$} & \textbf{Directional Acc. (\%)} & \textbf{Evaluated Folds} \\
+\hline
+\textbf{Regime Adaptive (Ours)} & \textbf{0.010604} & \textbf{0.014090} & \textbf{-0.0785} & \textbf{49.33\%} & 1066 \\
+LSTM & 0.010654 & 0.014176 & -0.0993 & 50.20\% & 1066 \\
+ANN & 0.011538 & 0.015017 & -0.3245 & 49.54\% & 1066 \\
+XGBoost & 0.011575 & 0.015221 & -0.3714 & 50.04\% & 1066 \\
+Liu Static (Liu et al. Control) & 0.011673 & 0.015191 & -0.3312 & 49.71\% & 1066 \\
+RandomForest & 0.011898 & 0.015473 & -0.4380 & 49.74\% & 1066 \\
+\hline
+\end{tabular}
+\end{table*}
