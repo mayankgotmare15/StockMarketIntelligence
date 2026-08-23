@@ -103,3 +103,132 @@ CREATE TABLE IF NOT EXISTS experiment_metrics (
 );
 
 CREATE INDEX IF NOT EXISTS idx_exp_metrics_run_symbol ON experiment_metrics(run_id, symbol, model_name);
+
+-- ==============================================================================
+-- 6. User Profiles & Authentication
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS user_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255), -- NULL for OAuth users (Google/Apple)
+    google_id VARCHAR(255) UNIQUE,
+    auth_provider VARCHAR(50) DEFAULT 'local', -- 'local', 'google', 'apple', 'demo'
+    full_name VARCHAR(255) NOT NULL,
+    avatar_url TEXT,
+    role VARCHAR(50) DEFAULT 'pro_trader', -- 'pro_trader', 'quant_analyst', 'guest'
+    risk_tolerance VARCHAR(50) DEFAULT 'moderate', -- 'conservative', 'moderate', 'aggressive'
+    trading_horizon VARCHAR(50) DEFAULT 'swing', -- 'intraday', 'swing', 'positional'
+    default_stock VARCHAR(20) DEFAULT 'APOLLOHOSP.NS' REFERENCES stock_universe(symbol) ON DELETE SET NULL,
+    primary_sector VARCHAR(100) DEFAULT 'Pharma',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    last_login_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_google_id ON user_profiles(google_id);
+
+-- ==============================================================================
+-- 7. User ML Model & Drift Customization Preferences
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS user_ml_preferences (
+    user_id UUID PRIMARY KEY REFERENCES user_profiles(id) ON DELETE CASCADE,
+    drift_threshold NUMERIC(4, 2) DEFAULT 2.00, -- 1.50, 2.00, 2.50
+    primary_baseline VARCHAR(50) DEFAULT 'Liu_Static', -- 'Liu_Static', 'LSTM', 'ANN', 'XGBoost'
+    alert_volatility_spike BOOLEAN DEFAULT TRUE,
+    alert_drift_detected BOOLEAN DEFAULT TRUE,
+    biometric_enabled BOOLEAN DEFAULT FALSE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 8. User Watchlists (Personalized Portfolio Tracking)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS user_watchlists (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+    symbol VARCHAR(20) NOT NULL REFERENCES stock_universe(symbol) ON DELETE CASCADE,
+    target_entry_price NUMERIC(12, 4),
+    target_stop_loss NUMERIC(12, 4),
+    alert_price_threshold NUMERIC(12, 4),
+    notes TEXT,
+    display_order INT DEFAULT 0,
+    added_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    CONSTRAINT uq_user_symbol UNIQUE (user_id, symbol)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_watchlists_user ON user_watchlists(user_id);
+
+-- ==============================================================================
+-- 9. User Simulations (Bookmarked Keypad Scenarios)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS user_simulations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+    symbol VARCHAR(20) NOT NULL REFERENCES stock_universe(symbol) ON DELETE CASCADE,
+    input_price NUMERIC(12, 4) NOT NULL,
+    scenario_type VARCHAR(50) NOT NULL, -- 'Normal', 'High Vol', 'RSI Low', 'MACD'
+    simulated_adaptive_return NUMERIC(10, 6) NOT NULL,
+    simulated_static_return NUMERIC(10, 6) NOT NULL,
+    simulated_adaptive_price NUMERIC(12, 4) NOT NULL,
+    simulated_static_price NUMERIC(12, 4) NOT NULL,
+    simulated_error_reduction NUMERIC(6, 2) NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_simulations_user ON user_simulations(user_id, created_at DESC);
+
+-- ==============================================================================
+-- 10. User Activity & Audit Feed
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS user_activity_feed (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+    event_type VARCHAR(50) NOT NULL, -- 'login', 'simulation_run', 'drift_alert', 'watchlist_add', 'preference_change'
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    payload JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_activity_user_time ON user_activity_feed(user_id, created_at DESC);
+
+-- ==============================================================================
+-- 11. Auth Sessions & Refresh Token Rotation (RTR)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS auth_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    device_info TEXT,
+    ip_address VARCHAR(45),
+    is_revoked BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_auth_sessions_lookup ON auth_sessions(token_hash, is_revoked, expires_at);
+
+-- ==============================================================================
+-- Row Level Security (RLS) Policies
+-- ==============================================================================
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_ml_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_watchlists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_simulations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_activity_feed ENABLE ROW LEVEL SECURITY;
+ALTER TABLE auth_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access to stock data & public benchmarks
+ALTER TABLE stock_universe ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_ohlcv ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ablation_predictions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shap_importance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE experiment_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY public_read_stock_universe ON stock_universe FOR SELECT USING (true);
+CREATE POLICY public_read_daily_ohlcv ON daily_ohlcv FOR SELECT USING (true);
+CREATE POLICY public_read_ablation_predictions ON ablation_predictions FOR SELECT USING (true);
+CREATE POLICY public_read_shap_importance ON shap_importance FOR SELECT USING (true);
+CREATE POLICY public_read_experiment_metrics ON experiment_metrics FOR SELECT USING (true);

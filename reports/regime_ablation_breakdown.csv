@@ -1,0 +1,4 @@
+regime_flag,sample_count,static_mae,adaptive_mae,static_mse,adaptive_mse,pct_mae_improvement
+High,14408,0.012741,0.011507,0.000318,0.000259,9.69
+Low,6706,0.010227,0.009415,0.000204,0.000179,7.94
+Medium,4716,0.011465,0.010314,0.000255,0.000214,10.04

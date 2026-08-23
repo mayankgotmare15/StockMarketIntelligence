@@ -25,19 +25,21 @@ export const LeaderboardScreen: React.FC<LeaderboardScreenProps> = ({ metrics, o
   const minMae = Math.min(...models.map((m) => m.mean_mae));
 
   return (
-    <div className="px-5 space-y-4 pt-1">
+    <div className="px-5 space-y-4 pt-3 pb-4">
       {/* 1. Header with back chevron */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={onBack}
-            className="w-8 h-8 rounded-full bg-white border border-[#EBE8DF] flex items-center justify-center text-[#141414]"
+            className="w-9 h-9 rounded-full bg-white border border-[#EBE8DF] flex items-center justify-center text-[#141414] hover:bg-[#FAF9F5] active:scale-95 transition"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           <h1 className="text-2xl font-bold tracking-tight text-[#141414]">Leaderboard</h1>
         </div>
-        <span className="text-xs font-semibold text-[#8E8E93]">30 Stocks</span>
+        <span className="text-xs font-semibold text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-[#EBE8DF]">
+          30 Stocks
+        </span>
       </div>
 
       {/* 2. Hero Card matching Budget Spent card in screenshot 3 */}
