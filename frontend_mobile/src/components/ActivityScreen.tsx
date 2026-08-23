@@ -54,9 +54,9 @@ export const ActivityScreen: React.FC<ActivityScreenProps> = ({ backtestData, se
   ];
 
   return (
-    <div className="px-5 space-y-4 pt-1">
+    <div className="px-5 space-y-4 pt-3 pb-4">
       {/* 1. Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between min-h-[44px]">
         <h1 className="text-2xl font-bold tracking-tight text-[#141414]">Activity</h1>
         <span className="text-xs font-semibold text-[#8E8E93] bg-white px-2.5 py-1 rounded-full border border-[#EBE8DF]">
           {filteredItems.length} Predictions

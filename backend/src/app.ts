@@ -6,6 +6,8 @@ import { backtestRouter } from "./routes/backtest.js";
 import { regimesRouter } from "./routes/regimes.js";
 import { shapRouter } from "./routes/shap.js";
 import { metricsRouter } from "./routes/metrics.js";
+import { authRouter } from "./routes/auth.js";
+import { userRouter } from "./routes/user.js";
 
 export const app: Express = express();
 
@@ -26,6 +28,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // API Routes
 app.use("/api/health", healthRouter);
 app.use("/health", healthRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/user", userRouter);
 app.use("/api/stocks", stocksRouter);
 app.use("/api/backtest", backtestRouter);
 app.use("/api/regimes", regimesRouter);
@@ -57,6 +61,15 @@ app.get("/", (req: Request, res: Response) => {
     docs: "/api/health",
     endpoints: [
       "/api/health",
+      "/api/auth/register",
+      "/api/auth/login",
+      "/api/auth/refresh",
+      "/api/auth/demo",
+      "/api/user/profile",
+      "/api/user/preferences",
+      "/api/user/watchlist",
+      "/api/user/simulations",
+      "/api/user/activity",
       "/api/stocks",
       "/api/backtest/:symbol",
       "/api/regimes/:symbol",

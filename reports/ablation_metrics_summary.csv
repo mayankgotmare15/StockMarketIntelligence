@@ -1,0 +1,7 @@
+model_name,mean_mae,mean_rmse,mean_r2,mean_directional_accuracy,total_evaluated_folds
+Regime_Adaptive,0.01068,0.014184,-0.078218,49.36,2296
+LSTM,0.010729,0.014254,-0.096296,50.05,2296
+ANN,0.01152,0.015026,-0.297358,49.64,2296
+XGBoost,0.011646,0.015301,-0.361667,49.95,2296
+Liu_Static,0.011771,0.015312,-0.352524,49.52,2296
+RandomForest,0.011975,0.015564,-0.430321,49.75,2296

@@ -22,15 +22,15 @@ export const ShapScreen: React.FC<ShapScreenProps> = ({ shapData, selectedStock,
   const maxVal = Math.max(...items.map((i) => i.mean_abs_shap)) || 1;
 
   return (
-    <div className="px-5 space-y-4 pt-1">
+    <div className="px-5 space-y-4 pt-3 pb-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between min-h-[44px]">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={onBack}
-            className="w-8 h-8 rounded-full bg-white border border-[#EBE8DF] flex items-center justify-center text-[#141414]"
+            className="w-9 h-9 rounded-full bg-white border border-[#EBE8DF] flex items-center justify-center text-[#141414] hover:bg-[#FAF9F5] active:scale-95 transition"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={18} />
           </button>
           <h1 className="text-2xl font-bold tracking-tight text-[#141414]">Tree SHAP</h1>
         </div>

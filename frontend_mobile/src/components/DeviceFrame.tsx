@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Wifi,
   Battery,
@@ -12,12 +12,35 @@ interface DeviceFrameProps {
 }
 
 export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
+  const [isDesktop, setIsDesktop] = useState<boolean>(() => {
+    return typeof window !== "undefined" ? window.innerWidth >= 640 : false;
+  });
   const [deviceMode, setDeviceMode] = useState<DeviceMode>("iphone");
 
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 640);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // When rendered directly on a mobile device or small screen (Expo Go / mobile browser)
+  if (!isDesktop) {
+    return (
+      <div className="w-full h-[100dvh] max-h-[100dvh] flex flex-col bg-[#F6F4EE] overflow-hidden select-none relative pt-2">
+        <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  // When rendered on a desktop/tablet browser (presentation & preview mode)
   return (
-    <div className="min-h-screen bg-[#1A1916] flex flex-col items-center justify-center p-0 sm:p-6 select-none overflow-x-hidden">
+    <div className="min-h-screen bg-[#1A1916] flex flex-col items-center justify-center p-6 select-none overflow-x-hidden">
       {/* Top Device Selector Switcher */}
-      <header className="hidden sm:flex items-center justify-between w-full max-w-[430px] mb-3 px-3.5 py-2 rounded-2xl bg-[#282724]/90 backdrop-blur-md border border-white/10 text-xs text-white shadow-xl">
+      <header className="flex items-center justify-between w-full max-w-[430px] mb-3 px-3.5 py-2 rounded-2xl bg-[#282724]/90 backdrop-blur-md border border-white/10 text-xs text-white shadow-xl">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-[#F2A93B] animate-pulse" />
           <span className="font-semibold text-white/90 tracking-wide text-[11px]">StockAI Terminal</span>
@@ -66,16 +89,13 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
             ? "max-w-[414px] h-[880px] rounded-[52px] border-[10px] border-[#252422] shadow-[0_30px_90px_rgba(0,0,0,0.85)]"
             : deviceMode === "android"
             ? "max-w-[412px] h-[870px] rounded-[44px] border-[9px] border-[#2A2926] shadow-[0_30px_90px_rgba(0,0,0,0.85)]"
-            : "max-w-md min-h-screen shadow-2xl"
+            : "max-w-md h-[860px] rounded-3xl border border-[#EBE8DF] shadow-2xl"
         }`}
       >
-        {/* ================= iPhone Top Status Bar ================= */}
+        {/* iPhone Top Simulated Status Bar */}
         {deviceMode === "iphone" && (
           <section className="pt-3 px-7 pb-1.5 flex items-center justify-between z-40 shrink-0 select-none bg-transparent">
-            {/* iOS Clock */}
             <span className="font-semibold text-[15px] tracking-tight text-[#141414]">9:41</span>
-
-            {/* Dynamic Island Notch */}
             <div className="w-[124px] h-[31px] bg-black rounded-full flex items-center justify-between px-3 shadow-inner">
               <div className="w-3 h-3 rounded-full bg-[#151515] border border-white/10" />
               <div className="flex items-center gap-1">
@@ -83,8 +103,6 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
                 <div className="w-2.5 h-2.5 rounded-full bg-[#181818]" />
               </div>
             </div>
-
-            {/* iOS Status Icons */}
             <div className="flex items-center gap-1.5 text-[#141414]">
               <div className="flex items-end gap-0.5 h-3">
                 <div className="w-0.5 h-1 bg-black rounded-xs" />
@@ -98,18 +116,13 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
           </section>
         )}
 
-        {/* ================= Android Top Status Bar ================= */}
+        {/* Android Top Simulated Status Bar */}
         {deviceMode === "android" && (
           <section className="relative pt-2.5 px-6 pb-2.5 flex items-center justify-between z-40 shrink-0 select-none bg-transparent border-b border-black/5">
-            {/* Android Clock */}
             <span className="font-medium text-[13px] tracking-normal text-[#141414]">09:41</span>
-
-            {/* Android Centered Punch-Hole Camera (Perfect Absolute Center) */}
             <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-black border-[1.5px] border-[#383734] flex items-center justify-center shadow-xs pointer-events-none">
               <div className="w-1.5 h-1.5 rounded-full bg-[#111] ring-1 ring-blue-900/40" />
             </div>
-
-            {/* Android Status Icons (5G, Wifi, Battery) */}
             <div className="flex items-center gap-2 text-[#141414]">
               <span className="text-[10px] font-bold tracking-tight">5G</span>
               <Wifi size={13} strokeWidth={2.2} />
@@ -121,10 +134,10 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
           </section>
         )}
 
-        {/* ================= Fluid Mobile Top Bar ================= */}
+        {/* Fluid Mode Top Bar */}
         {deviceMode === "fluid" && (
-          <section className="pt-2 px-5 pb-1 flex items-center justify-between z-40 shrink-0 select-none text-xs text-[#8E8E93]">
-            <span className="font-semibold text-[#141414]">Fluid Viewport</span>
+          <section className="pt-2.5 px-5 pb-1 flex items-center justify-between z-40 shrink-0 select-none text-xs text-[#8E8E93]">
+            <span className="font-semibold text-[#141414]">StockAI Fluid Preview</span>
             <div className="flex items-center gap-1.5">
               <Wifi size={13} />
               <Battery size={16} />
@@ -132,18 +145,17 @@ export const DeviceFrame: React.FC<DeviceFrameProps> = ({ children }) => {
           </section>
         )}
 
-        {/* Main Content Layout Container */}
+        {/* Main Content Container */}
         <div className="flex-1 flex flex-col h-full overflow-hidden relative">
           {children}
         </div>
 
-        {/* Bottom Hardware Navigation Bar Indicator */}
+        {/* Bottom Hardware Bezel Indicators (Desktop preview only) */}
         {deviceMode === "iphone" && (
           <footer className="w-full pb-2 pt-1 flex justify-center shrink-0 pointer-events-none bg-transparent">
             <div className="w-34 h-1 bg-[#141414]/50 rounded-full" />
           </footer>
         )}
-
         {deviceMode === "android" && (
           <footer className="w-full pb-2 pt-1 flex justify-center shrink-0 pointer-events-none bg-transparent">
             <div className="w-20 h-1 bg-[#141414]/40 rounded-full" />

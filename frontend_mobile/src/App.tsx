@@ -6,6 +6,11 @@ import { ActivityScreen } from "./components/ActivityScreen";
 import { LeaderboardScreen } from "./components/LeaderboardScreen";
 import { ShapScreen } from "./components/ShapScreen";
 import { KeypadModal } from "./components/KeypadModal";
+import { AuthWelcomeScreen } from "./components/AuthWelcomeScreen";
+import { AuthStepNameScreen } from "./components/AuthStepNameScreen";
+import { AuthStepAccountScreen } from "./components/AuthStepAccountScreen";
+import { ProfileScreen } from "./components/ProfileScreen";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import {
   fetchStocks,
   fetchBacktest,
@@ -22,7 +27,8 @@ import {
   ActiveTab,
 } from "./types";
 
-export function App() {
+function MainAppContent() {
+  const { authStep, isProfileOpen } = useAuth();
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [stocks, setStocks] = useState<StockMetadata[]>([]);
   const [selectedStock, setSelectedStock] = useState<string>("APOLLOHOSP.NS");
@@ -96,43 +102,74 @@ export function App() {
     setIsLoading(false);
   };
 
+  // Auth Routing: If unauthenticated, show multi-step glassmorphic onboarding flow
+  if (authStep === "welcome") {
+    return (
+      <DeviceFrame>
+        <AuthWelcomeScreen />
+      </DeviceFrame>
+    );
+  }
+
+  if (authStep === "name") {
+    return (
+      <DeviceFrame>
+        <AuthStepNameScreen />
+      </DeviceFrame>
+    );
+  }
+
+  if (authStep === "credentials") {
+    return (
+      <DeviceFrame>
+        <AuthStepAccountScreen />
+      </DeviceFrame>
+    );
+  }
+
   return (
     <DeviceFrame>
-      {/* Scrollable Screen Content Container */}
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-6">
-        {activeTab === "home" && (
-          <HomeScreen
-            stocks={stocks}
-            selectedStock={selectedStock}
-            onSelectStock={setSelectedStock}
-            backtestData={backtestData}
-            regimeData={regimeData}
-            onSync={handleSync}
-            isLoading={isLoading}
-            onNavigateTab={setActiveTab}
-          />
-        )}
+      {/* Scrollable Screen Content Container with bottom clearance for floating bar */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+        {isProfileOpen ? (
+          <ProfileScreen />
+        ) : (
+          <>
+            {activeTab === "home" && (
+              <HomeScreen
+                stocks={stocks}
+                selectedStock={selectedStock}
+                onSelectStock={setSelectedStock}
+                backtestData={backtestData}
+                regimeData={regimeData}
+                onSync={handleSync}
+                isLoading={isLoading}
+                onNavigateTab={setActiveTab}
+              />
+            )}
 
-        {activeTab === "activity" && (
-          <ActivityScreen
-            backtestData={backtestData}
-            selectedStock={selectedStock}
-          />
-        )}
+            {activeTab === "activity" && (
+              <ActivityScreen
+                backtestData={backtestData}
+                selectedStock={selectedStock}
+              />
+            )}
 
-        {activeTab === "insights" && (
-          <LeaderboardScreen
-            metrics={metrics}
-            onBack={() => setActiveTab("home")}
-          />
-        )}
+            {activeTab === "insights" && (
+              <LeaderboardScreen
+                metrics={metrics}
+                onBack={() => setActiveTab("home")}
+              />
+            )}
 
-        {activeTab === "shap" && (
-          <ShapScreen
-            shapData={shapData}
-            selectedStock={selectedStock}
-            onBack={() => setActiveTab("home")}
-          />
+            {activeTab === "shap" && (
+              <ShapScreen
+                shapData={shapData}
+                selectedStock={selectedStock}
+                onBack={() => setActiveTab("home")}
+              />
+            )}
+          </>
         )}
       </div>
 
@@ -143,13 +180,23 @@ export function App() {
         selectedStock={selectedStock}
       />
 
-      {/* Docked Sticky Bottom Navigation Bar (Stays pinned at bottom) */}
-      <BottomNavBar
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        onOpenKeypad={() => setIsKeypadOpen(true)}
-      />
+      {/* Floating Docked Bottom Navigation Bar (Hidden when in Profile view) */}
+      {!isProfileOpen && (
+        <BottomNavBar
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          onOpenKeypad={() => setIsKeypadOpen(true)}
+        />
+      )}
     </DeviceFrame>
+  );
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <MainAppContent />
+    </AuthProvider>
   );
 }
 
