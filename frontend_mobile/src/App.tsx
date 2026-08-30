@@ -9,6 +9,7 @@ import { KeypadModal } from "./components/KeypadModal";
 import { AuthWelcomeScreen } from "./components/AuthWelcomeScreen";
 import { AuthStepNameScreen } from "./components/AuthStepNameScreen";
 import { AuthStepAccountScreen } from "./components/AuthStepAccountScreen";
+import { MobileLandingScreen } from "./components/MobileLandingScreen";
 import { ProfileScreen } from "./components/ProfileScreen";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import {
@@ -28,7 +29,8 @@ import {
 } from "./types";
 
 function MainAppContent() {
-  const { authStep, isProfileOpen } = useAuth();
+  const { authStep, isProfileOpen, loginWithDemo } = useAuth();
+  const [viewMode, setViewMode] = useState<"landing" | "app">("landing");
   const [activeTab, setActiveTab] = useState<ActiveTab>("home");
   const [stocks, setStocks] = useState<StockMetadata[]>([]);
   const [selectedStock, setSelectedStock] = useState<string>("APOLLOHOSP.NS");
@@ -102,7 +104,24 @@ function MainAppContent() {
     setIsLoading(false);
   };
 
-  // Auth Routing: If unauthenticated, show multi-step glassmorphic onboarding flow
+  // 1. Mobile Landing Page View (Research & Architecture Showcase)
+  if (viewMode === "landing") {
+    return (
+      <DeviceFrame>
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+          <MobileLandingScreen
+            onLaunchApp={() => setViewMode("app")}
+            onDemoLogin={async () => {
+              await loginWithDemo();
+              setViewMode("app");
+            }}
+          />
+        </div>
+      </DeviceFrame>
+    );
+  }
+
+  // 2. Auth Routing: If unauthenticated, show multi-step glassmorphic onboarding flow
   if (authStep === "welcome") {
     return (
       <DeviceFrame>
@@ -145,6 +164,7 @@ function MainAppContent() {
                 onSync={handleSync}
                 isLoading={isLoading}
                 onNavigateTab={setActiveTab}
+                onBackToLanding={() => setViewMode("landing")}
               />
             )}
 
