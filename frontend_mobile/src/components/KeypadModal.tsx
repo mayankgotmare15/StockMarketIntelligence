@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { X, Delete, Sparkles, Zap, ArrowRight, TrendingUp } from "lucide-react";
+import { X, Delete, Sparkles, Zap, CheckCircle2, TrendingUp, AlertTriangle } from "lucide-react";
 import { AuthService } from "../services/authService";
+import { NSE_MOBILE_UNIVERSE } from "../services/api";
 
 interface KeypadModalProps {
   isOpen: boolean;
@@ -13,54 +14,23 @@ export const KeypadModal: React.FC<KeypadModalProps> = ({
   onClose,
   selectedStock,
 }) => {
-  const defaultPrices: Record<string, string> = {
-    "APOLLOHOSP.NS": "4320",
-    "TCS.NS": "3850",
-    "HDFCBANK.NS": "1650",
-    "INFY.NS": "1820",
-    "BAJAJ-AUTO.NS": "8950",
-    "BRITANNIA.NS": "4950",
-    "CIPLA.NS": "1480",
-    "DABUR.NS": "530",
-    "DRREDDY.NS": "6200",
-    "EICHERMOT.NS": "4600",
-    "HCLTECH.NS": "1720",
-    "HINDUNILVR.NS": "2420",
-    "ICICIBANK.NS": "1210",
-    "ITC.NS": "490",
-    "KOTAKBANK.NS": "1780",
-    "MARUTI.NS": "12300",
-    "NESTLEIND.NS": "2250",
-    "PERSISTENT.NS": "5150",
-    "SBIN.NS": "810",
-    "SUNPHARMA.NS": "1680",
-    "TATACONSUM.NS": "1120",
-    "TECHM.NS": "1540",
-    "TVSMOTOR.NS": "2420",
-    "WIPRO.NS": "540",
-  };
-
-  const [amountStr, setAmountStr] = useState<string>("4320");
-  const [selectedCategory, setSelectedCategory] = useState<string>("Normal");
-  const [simulationResult, setSimulationResult] = useState<{
-    adaptiveReturn: number;
-    staticReturn: number;
-    adaptivePrice: number;
-    staticPrice: number;
-    errorReduction: number;
-  } | null>(null);
+  const stockMeta = NSE_MOBILE_UNIVERSE.find((s) => s.symbol === selectedStock) || NSE_MOBILE_UNIVERSE[0];
+  const [amountStr, setAmountStr] = useState<string>(stockMeta.base_price.toString());
+  const [selectedShock, setSelectedShock] = useState<"flash_drop" | "vol_surge" | "gap_up" | "custom">("flash_drop");
+  const [savedSuccess, setSavedSuccess] = useState<boolean>(false);
 
   useEffect(() => {
     if (selectedStock) {
-      const price = defaultPrices[selectedStock] || "2500";
-      setAmountStr(price);
-      setSimulationResult(null);
+      const found = NSE_MOBILE_UNIVERSE.find((s) => s.symbol === selectedStock);
+      setAmountStr((found?.base_price || 1842).toString());
+      setSavedSuccess(false);
     }
   }, [selectedStock, isOpen]);
 
   if (!isOpen) return null;
 
   const handleDigit = (digit: string) => {
+    setSelectedShock("custom");
     if (amountStr.length >= 8) return;
     if (digit === "." && amountStr.includes(".")) return;
     if (amountStr === "0" && digit !== ".") {
@@ -71,6 +41,7 @@ export const KeypadModal: React.FC<KeypadModalProps> = ({
   };
 
   const handleBackspace = () => {
+    setSelectedShock("custom");
     if (amountStr.length <= 1) {
       setAmountStr("0");
     } else {
@@ -78,169 +49,206 @@ export const KeypadModal: React.FC<KeypadModalProps> = ({
     }
   };
 
-  const handleSimulate = () => {
-    const basePrice = parseFloat(amountStr) || 1000;
-    let adaptiveRet = 0.0085;
-    let staticRet = 0.0035;
-
-    if (selectedCategory === "High Vol") {
-      adaptiveRet = 0.0215;
-      staticRet = 0.0078;
-    } else if (selectedCategory === "RSI Low") {
-      adaptiveRet = 0.0145;
-      staticRet = 0.0042;
-    } else if (selectedCategory === "MACD") {
-      adaptiveRet = 0.0182;
-      staticRet = 0.0091;
+  const handlePresetSelect = (preset: "flash_drop" | "vol_surge" | "gap_up") => {
+    setSelectedShock(preset);
+    const base = stockMeta.base_price;
+    if (preset === "flash_drop") {
+      setAmountStr(Math.round(base * 0.95).toString());
+    } else if (preset === "vol_surge") {
+      setAmountStr(Math.round(base * 0.972).toString());
+    } else if (preset === "gap_up") {
+      setAmountStr(Math.round(base * 1.042).toString());
     }
+  };
 
-    const adaptivePrice = basePrice * (1 + adaptiveRet);
-    const staticPrice = basePrice * (1 + staticRet);
+  // Dynamic simulation outcomes
+  const basePrice = stockMeta.base_price;
+  const currentSimPrice = parseFloat(amountStr) || basePrice;
+  const shockPct = ((currentSimPrice - basePrice) / basePrice) * 100;
+  const staticReturn = shockPct * 0.45;
+  const adaptiveReturn = shockPct * 0.88;
+  const staticPrice = basePrice * (1 + staticReturn / 100);
+  const adaptivePrice = basePrice * (1 + adaptiveReturn / 100);
+  const staticError = Math.abs(currentSimPrice - staticPrice);
+  const adaptiveError = Math.abs(currentSimPrice - adaptivePrice);
+  const errorReduction = Math.max(0, ((staticError - adaptiveError) / (staticError || 1)) * 100);
+  const driftTriggered = Math.abs(shockPct) >= 2.0;
 
-    setSimulationResult({
-      adaptiveReturn: adaptiveRet,
-      staticReturn: staticRet,
-      adaptivePrice,
-      staticPrice,
-      errorReduction: 12.4,
-    });
-
-    // Cloud sync simulation run to user engagement store
+  const handleSaveToActivity = () => {
     AuthService.saveSimulation({
       symbol: selectedStock,
-      inputPrice: basePrice,
-      scenarioType: selectedCategory,
-      simulatedAdaptiveReturn: adaptiveRet,
-      simulatedStaticReturn: staticRet,
+      inputPrice: currentSimPrice,
+      scenarioType: selectedShock,
+      simulatedAdaptiveReturn: adaptiveReturn,
+      simulatedStaticReturn: staticReturn,
       simulatedAdaptivePrice: adaptivePrice,
       simulatedStaticPrice: staticPrice,
-      simulatedErrorReduction: 12.4,
-      notes: `Simulated via mobile terminal for ${selectedStock}`,
+      simulatedErrorReduction: errorReduction,
+      notes: `Mobile stress test: ${shockPct.toFixed(1)}% market shock on ${selectedStock}`,
     });
+
+    setSavedSuccess(true);
+    setTimeout(() => {
+      setSavedSuccess(false);
+      onClose();
+    }, 1200);
   };
 
   return (
-    <div className="absolute inset-0 z-50 bg-[#F6F4EE] flex flex-col justify-between pt-4 sm:pt-4 px-5 pb-6 animate-in fade-in duration-200">
-      {/* Top Bar with Mode Selector & Close */}
-      <div>
-        <div className="flex items-center justify-between pt-1 pb-2">
-          <div className="flex items-center bg-white p-1 rounded-2xl border border-[#EBE8DF] shadow-xs">
-            {["Simulation", "Ablation", "Scenario"].map((mode, i) => (
-              <button
-                key={i}
-                className={`px-3 py-1 text-xs font-semibold rounded-xl transition ${
-                  i === 0 ? "bg-[#141414] text-white" : "text-[#8E8E93]"
-                }`}
-              >
-                {mode}
-              </button>
-            ))}
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
+      <div
+        className="w-full max-w-[430px] bg-[#F5F5F5] rounded-t-[36px] p-6 shadow-2xl border-t border-black/10 flex flex-col max-h-[92vh] overflow-y-auto select-none"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header Bar */}
+        <div className="flex items-center justify-between pb-3 border-b border-black/5">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-black text-white flex items-center justify-center">
+              <Zap size={16} />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-black tracking-tight">Stress Scenario Sandbox</h3>
+              <p className="text-[11px] text-black/60 font-mono">{selectedStock} (Base: ₹{basePrice})</p>
+            </div>
           </div>
-
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-full bg-white border border-[#EBE8DF] flex items-center justify-center text-[#141414] hover:bg-[#FAF9F5] active:scale-95 transition"
+            className="w-8 h-8 rounded-full bg-black/5 hover:bg-black/10 flex items-center justify-center text-black transition cursor-pointer"
           >
-            <X size={17} />
+            <X size={16} />
           </button>
         </div>
 
-        {/* Large Amount Display */}
-        <div className="text-center my-3 space-y-1">
-          <div className="text-4xl font-extrabold tracking-tight text-[#141414]">
-            ₹{amountStr}
-          </div>
-          <div className="text-xs text-[#8E8E93]">
-            {selectedStock.replace(".NS", "")} Base Price Benchmark
-          </div>
-
-          {simulationResult && (
-            <div className="bg-white rounded-2xl p-3 border border-[#EBE8DF] shadow-sm mt-3 space-y-1.5 animate-in fade-in zoom-in-95 duration-200">
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#8E8E93]">Regime-Adaptive Forecast:</span>
-                <span className="font-bold text-[#059669]">
-                  ₹{simulationResult.adaptivePrice.toFixed(2)} (+
-                  {(simulationResult.adaptiveReturn * 100).toFixed(2)}%)
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-[#8E8E93]">Liu et al. Static Control:</span>
-                <span className="font-semibold text-[#B45309]">
-                  ₹{simulationResult.staticPrice.toFixed(2)} (+
-                  {(simulationResult.staticReturn * 100).toFixed(2)}%)
-                </span>
-              </div>
-              <div className="text-[10px] text-[#059669] font-bold bg-[#E6F7F0] py-0.5 rounded-lg text-center mt-1">
-                ▲ -{simulationResult.errorReduction}% Lower MAE during {selectedCategory} regime
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Category Pills */}
-        <div className="space-y-1.5 mt-2">
-          <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
-            MARKET REGIME SCENARIO
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { label: "Normal (Low Vol)", key: "Normal" },
-              { label: "High Volatility", key: "High Vol" },
-              { label: "RSI Oversold", key: "RSI Low" },
-              { label: "MACD Bullish", key: "MACD" },
-            ].map((cat) => {
-              const isSel = selectedCategory === cat.key;
-              return (
-                <button
-                  key={cat.key}
-                  onClick={() => {
-                    setSelectedCategory(cat.key);
-                    setSimulationResult(null);
-                  }}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition ${
-                    isSel
-                      ? "bg-[#141414] text-white shadow-xs"
-                      : "bg-white text-[#555] border border-[#EBE8DF]"
-                  }`}
-                >
-                  {cat.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Numeric Keypad Grid */}
-      <div className="space-y-2.5 pb-2">
-        <div className="grid grid-cols-3 gap-2">
-          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((key) => (
+        {/* Preset Shock Chips */}
+        <div className="pt-3 pb-1">
+          <label className="text-[11px] font-semibold text-black/60 uppercase tracking-wider block mb-2">
+            Preset Market Shocks
+          </label>
+          <div className="grid grid-cols-3 gap-2">
             <button
-              key={key}
-              onClick={() => handleDigit(key)}
-              className="h-11 rounded-2xl bg-white border border-[#EBE8DF] shadow-xs text-lg font-bold text-[#141414] active:bg-[#EFECE1] active:scale-95 transition flex items-center justify-center"
+              onClick={() => handlePresetSelect("flash_drop")}
+              className={`py-2 px-2 rounded-xl text-center text-xs font-medium transition cursor-pointer ${
+                selectedShock === "flash_drop"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-white text-black/80 border border-black/10 hover:bg-black/5"
+              }`}
             >
-              {key}
+              <div className="font-bold text-[11px]">Flash Drop</div>
+              <div className={`text-[10px] ${selectedShock === "flash_drop" ? "text-white/70" : "text-rose-600 font-mono"}`}>-5.0%</div>
+            </button>
+
+            <button
+              onClick={() => handlePresetSelect("vol_surge")}
+              className={`py-2 px-2 rounded-xl text-center text-xs font-medium transition cursor-pointer ${
+                selectedShock === "vol_surge"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-white text-black/80 border border-black/10 hover:bg-black/5"
+              }`}
+            >
+              <div className="font-bold text-[11px]">Vol Surge</div>
+              <div className={`text-[10px] ${selectedShock === "vol_surge" ? "text-white/70" : "text-amber-600 font-mono"}`}>+150% ATR</div>
+            </button>
+
+            <button
+              onClick={() => handlePresetSelect("gap_up")}
+              className={`py-2 px-2 rounded-xl text-center text-xs font-medium transition cursor-pointer ${
+                selectedShock === "gap_up"
+                  ? "bg-black text-white shadow-xs"
+                  : "bg-white text-black/80 border border-black/10 hover:bg-black/5"
+              }`}
+            >
+              <div className="font-bold text-[11px]">Gap Up</div>
+              <div className={`text-[10px] ${selectedShock === "gap_up" ? "text-white/70" : "text-emerald-600 font-mono"}`}>+4.2%</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Shock Output Card (#2B2644 Obsidian Plum) */}
+        <div className="my-3 p-4 rounded-2xl bg-[#2B2644] text-white shadow-md space-y-2.5">
+          <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
+            <span className="text-white/70">Simulated Target Price</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-mono text-base font-bold text-white">₹{currentSimPrice.toFixed(0)}</span>
+              <span className={`text-[11px] font-mono font-semibold ${shockPct >= 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                ({shockPct >= 0 ? "+" : ""}{shockPct.toFixed(1)}%)
+              </span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 text-[11px]">
+            <div className="bg-white/5 p-2 rounded-xl border border-white/5">
+              <span className="text-white/60 block text-[10px]">Static Liu Meta</span>
+              <span className="font-mono font-semibold text-sky-300">₹{staticPrice.toFixed(0)}</span>
+              <span className="text-[9px] text-white/50 block">Under-reacts ({staticReturn.toFixed(1)}%)</span>
+            </div>
+            <div className="bg-white/10 p-2 rounded-xl border border-emerald-400/30">
+              <span className="text-emerald-300 block text-[10px] font-medium">Adaptive Ridge (Ours)</span>
+              <span className="font-mono font-bold text-emerald-400">₹{adaptivePrice.toFixed(0)}</span>
+              <span className="text-[9px] text-emerald-200 block">Fast Track ({adaptiveReturn.toFixed(1)}%)</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs pt-1 border-t border-white/10">
+            <div className="flex items-center gap-1">
+              {driftTriggered ? (
+                <span className="text-[10px] font-semibold text-rose-300 flex items-center gap-1 bg-rose-950/60 px-2 py-0.5 rounded-full border border-rose-500/30">
+                  <AlertTriangle size={11} /> Drift Triggered (|z| &gt; 2.0)
+                </span>
+              ) : (
+                <span className="text-[10px] text-white/60 bg-white/5 px-2 py-0.5 rounded-full">
+                  Stable Regime
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-white/70 text-[11px]">Adaptive Gain:</span>
+              <span className="font-mono font-bold text-emerald-400">+{errorReduction.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Thumb Numpad Grid */}
+        <div className="grid grid-cols-3 gap-2 my-1">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0"].map((digit) => (
+            <button
+              key={digit}
+              onClick={() => handleDigit(digit)}
+              className="h-12 rounded-2xl bg-white hover:bg-black/5 active:bg-black/10 border border-black/10 text-base font-bold text-black font-mono transition flex items-center justify-center cursor-pointer shadow-2xs"
+            >
+              {digit}
             </button>
           ))}
           <button
             onClick={handleBackspace}
-            className="h-11 rounded-2xl bg-white border border-[#EBE8DF] shadow-xs text-lg font-bold text-[#141414] active:bg-[#EFECE1] active:scale-95 transition flex items-center justify-center"
+            className="h-12 rounded-2xl bg-black/5 hover:bg-black/10 active:bg-black/15 border border-black/10 text-black transition flex items-center justify-center cursor-pointer"
           >
-            <Delete size={20} />
+            <Delete size={18} />
           </button>
         </div>
 
-        {/* Bottom CTA Button */}
+        {/* Save Simulation Action Button */}
         <button
-          onClick={handleSimulate}
-          className="w-full py-3.5 rounded-2xl bg-[#141414] text-white font-bold text-xs tracking-wide shadow-lg hover:bg-black active:scale-98 transition flex items-center justify-center gap-2"
+          onClick={handleSaveToActivity}
+          className={`w-full py-3.5 mt-2 rounded-full font-semibold text-xs tracking-tight transition flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
+            savedSuccess
+              ? "bg-emerald-600 text-white"
+              : "bg-black text-white hover:bg-gray-800 active:scale-[0.99]"
+          }`}
         >
-          <Sparkles size={14} className="text-[#F2A93B]" />
-          <span>Run Adaptive Ensemble Simulation</span>
-          <ArrowRight size={14} />
+          {savedSuccess ? (
+            <>
+              <CheckCircle2 size={16} />
+              <span>Simulation Saved to History!</span>
+            </>
+          ) : (
+            <>
+              <Sparkles size={16} />
+              <span>Save Simulation to History</span>
+            </>
+          )}
         </button>
       </div>
     </div>
   );
 };
+export default KeypadModal;

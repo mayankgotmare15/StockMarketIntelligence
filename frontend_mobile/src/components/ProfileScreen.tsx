@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { AuthService } from "../services/authService";
+import { NSE_MOBILE_UNIVERSE } from "../services/api";
 
 export const ProfileScreen: React.FC = () => {
   const { user, preferences, closeProfile, updatePreferences, updateProfile, logout } = useAuth();
@@ -35,13 +36,7 @@ export const ProfileScreen: React.FC = () => {
     triggerToast("Local storage cache cleared successfully");
   };
 
-  const availableStocks = [
-    { symbol: "APOLLOHOSP.NS", name: "Apollo Hospitals", sector: "Pharma" },
-    { symbol: "TCS.NS", name: "TCS", sector: "IT" },
-    { symbol: "HDFCBANK.NS", name: "HDFC Bank", sector: "Banking" },
-    { symbol: "INFY.NS", name: "Infosys", sector: "IT" },
-    { symbol: "BAJAJ-AUTO.NS", name: "Bajaj Auto", sector: "Auto" },
-  ];
+  const availableStocks = NSE_MOBILE_UNIVERSE;
 
   return (
     <div className="px-5 space-y-4 pt-3 pb-8 text-[#141414]">

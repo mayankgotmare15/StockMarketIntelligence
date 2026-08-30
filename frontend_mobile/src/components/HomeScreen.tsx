@@ -12,6 +12,7 @@ import {
   PieChart,
   Award,
   User,
+  ArrowLeft,
 } from "lucide-react";
 import { StockMetadata, BacktestRow, RegimeDistributionItem } from "../types";
 import { lttbDownsample, generateBezierSpline } from "../utils/chart";
@@ -28,6 +29,7 @@ interface HomeScreenProps {
   onSync: () => void;
   isLoading: boolean;
   onNavigateTab: (tab: any) => void;
+  onBackToLanding?: () => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -39,6 +41,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onSync,
   isLoading,
   onNavigateTab,
+  onBackToLanding,
 }) => {
   const { user, openProfile } = useAuth();
   const [timeframe, setTimeframe] = useState<"Week" | "Month" | "Year">("Month");
@@ -144,15 +147,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 1. Header: StockAI, Sync Info, Bell, Avatar */}
       <div className="flex items-center justify-between min-h-[44px]">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[#141414] font-sans flex items-center gap-1.5">
-            <span>StockAI</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#F2A93B]" />
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight text-[#141414] font-sans flex items-center gap-1.5">
+              <span>StockAI</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            </h1>
+            {onBackToLanding && (
+              <button
+                onClick={onBackToLanding}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-black/60 hover:text-black transition pl-2 border-l border-black/15 cursor-pointer"
+                title="Return to Public Research Overview"
+              >
+                <ArrowLeft size={11} />
+                <span>Overview</span>
+              </button>
+            )}
+          </div>
           <button
             onClick={onSync}
-            className="flex items-center gap-1.5 text-xs text-[#8E8E93] hover:text-[#141414] transition mt-0.5"
+            className="flex items-center gap-1.5 text-xs text-[#8E8E93] hover:text-[#141414] transition mt-0.5 cursor-pointer"
           >
-            <RefreshCw size={11} className={isLoading ? "animate-spin text-[#F2A93B]" : ""} />
+            <RefreshCw size={11} className={isLoading ? "animate-spin text-emerald-600" : ""} />
             <span>Updated live • Tap to sync</span>
           </button>
         </div>
